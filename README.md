@@ -5,7 +5,7 @@
 ## Development environment
 
 Editor: Google Apps Script Editor  
-Language: Google Apps Script
+Language: Google Apps Script   
 API: Messaging API
 
 ## Usage
