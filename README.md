@@ -12,3 +12,8 @@ API: Messaging API
 
 1. [「ごみカレンダー bot」](https://l.instagram.com/?u=https%3A%2F%2Fliff.line.me%2F1645278921-kWRPP32q%2F%3FaccountId%3D756viccf&e=AT2RAWL5mLAPim8lb5Zz-vT6JChV5nAxLFoFs47Arz5kb_MB5hBsmU1uAROqcDNFEnuwd_I2XIFccz3qn9kLuhCNdfVn_FJRVXVTW_s)と友達になる.
 2. 毎日21時に次の日に収集されるごみが通知される. 
+
+## Reference
+
+[ChatGPTと一緒にゴミ出しLINE BOTを作ってみた](https://qiita.com/ryo-futebol/items/6374b91cc104a6347001)    
+[GASの定期実行をピッタリの時間に行う方法](https://qiita.com/kakakaori830/items/c06674252513b8d1c42e)    
