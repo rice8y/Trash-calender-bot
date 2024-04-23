@@ -1,25 +1,123 @@
-function createTrigger() {
-  var allTriggers = ScriptApp.getProjectTriggers();
-  var existingTrigger = null;
+const SPREAD_SHEET_URL = 'YOUR_SS_URL';
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKE';
+const ss = SpreadsheetApp.openByUrl(SPREAD_SHEET_URL);
+const sheet = ss.getSheets()[0];
 
-  // すでに存在するmyFunctionトリガーを探す
-  for (var i = 0; i < allTriggers.length; i++) {
-    if (allTriggers[i].getHandlerFunction() === 'myFunction') {
-      existingTrigger = allTriggers[i];
-      break;
-    }
+// 一行分のデータを受け取って、シート末尾に記録する
+function addRecord(records = []) {
+  // ユーザーIDの列を取得
+  const userIdColumn = sheet.getRange(2, 2, sheet.getLastRow() - 1).getValues().flat();
+
+  // 新しいユーザーIDと比較して重複をチェック
+  if (userIdColumn.includes(records[1])) {
+    // 重複するユーザーIDが存在する場合はスキップ
+    return;
   }
 
-  // すでに存在するトリガーがあれば削除
-  if (existingTrigger !== null) {
-    ScriptApp.deleteTrigger(existingTrigger);
-  }
+  // 最終行の一行下に追記
+  const lastRow = sheet.getLastRow() + 1;
+  const range = sheet.getRange(lastRow, 1, 1, records.length)
+  range.setValues([records])
+}
 
-function myFunction() {
-    // LINE Messaging APIを使用するためのアクセストークンやチャンネルIDなどを設定する
-    var ACCESS_TOKEN = "YOUR_ACCES_TOKEN";
-    var USER_ID = "YOUR_USER_ID";
+// POSTリクエストに対する処理
+function doPost(e) {
+  // データが空なら処理しない
+  if (e == null || e.postData == null || e.postData.contents == null) return;
 
+  // リクエストを受け取ってオブジェクト化
+  const requestJSON = e.postData.contents;
+  const requestObj = JSON.parse(requestJSON);
+
+  // 以降は LINE Messaging API の仕様に準じた処理
+  const events = requestObj.events;
+  // events は配列で渡ってくるので、繰り返し処理する
+  events.forEach((event) => {
+    // メッセージイベントのみ受け付ける
+    if (event.type !== 'message') return;
+    const message = event.message;
+    // テキスト入力のみ受け付ける
+    if (message.type !== 'text') return;
+
+    // 記録するデータを取得
+    const datetime = new Date();
+    const userId = event.source.userId;
+    const text = message.text;
+
+    const records = [datetime, userId, text];
+
+    // スプレッドシートに記載
+    addRecord(records);
+    
+    var rmessage = "メッセージありがとうございます！\n\n申し訳ありませんが、個別チャットには対応しておりません。";
+    replyMessage(event.replyToken, rmessage);
+  })
+}
+
+// メッセージを返信する関数
+function replyMessage(replyToken, message) {
+  const url = "https://api.line.me/v2/bot/message/reply";
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + ACCESS_TOKEN
+  };
+  const data = {
+    "replyToken": replyToken,
+    "messages": [
+      {
+        "type": "text",
+        "text": message
+      }
+    ]
+  };
+
+  const options = {
+    "method": "post",
+    "headers": headers,
+    "payload": JSON.stringify(data)
+  };
+
+  UrlFetchApp.fetch(url, options);
+}
+
+// 全てのユーザーにメッセージを送信する関数
+function sendMessageToAllUsers(message) {
+  // ユーザーIDの列を取得
+  const userIds = sheet.getRange(3, 2, sheet.getLastRow() - 2).getValues().flat();
+
+  // 各ユーザーにメッセージを送信
+  userIds.forEach(userId => {
+    sendMessage(userId, message);
+  });
+}
+
+// ユーザーにメッセージを送信する関数
+function sendMessage(userId, message) {
+  const url = "https://api.line.me/v2/bot/message/push";
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + ACCESS_TOKEN
+  };
+  const data = {
+    "to": userId,
+    "messages": [
+      {
+        "type": "text",
+        "text": message
+      }
+    ]
+  };
+
+  const options = {
+    "method": "post",
+    "headers": headers,
+    "payload": JSON.stringify(data)
+  };
+
+  UrlFetchApp.fetch(url, options);
+}
+
+function mainFunction() {
     // Google Calendar APIを有効化し、必要な権限を付与する
     var calendar = CalendarApp.getCalendarById("primary");
 
@@ -127,30 +225,34 @@ function myFunction() {
         message = "明日のごみの収集はありません。";
     }
 
-    UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
-        "headers": {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + ACCESS_TOKEN
-        },
-        "method": "post",
-        "payload": JSON.stringify({
-            "to": USER_ID,
-            "messages": [{
-                "type": "text",
-                "text": message
-            }]
-        })
-    });
+    sendMessageToAllUsers(message);
 }
+
+function createTrigger() {
+  var allTriggers = ScriptApp.getProjectTriggers();
+  var existingTrigger = null;
+
+  // すでに存在するmyFunctionトリガーを探す
+  for (var i = 0; i < allTriggers.length; i++) {
+    if (allTriggers[i].getHandlerFunction() === 'mainFunction') {
+      existingTrigger = allTriggers[i];
+      break;
+    }
+  }
+
+  // すでに存在するトリガーがあれば削除
+  if (existingTrigger !== null) {
+    ScriptApp.deleteTrigger(existingTrigger);
+  }
 
   // 新しいトリガーを作成
   var triggerDay = new Date();
   triggerDay.setDate(triggerDay.getDate() + 1);
   triggerDay.setHours(21);
-  triggerDay.setMinutes(0);
-  triggerDay.setSeconds(0);
+  triggerDay.setMinutes(00);
+  triggerDay.setSeconds(00);
 
-  ScriptApp.newTrigger('myFunction')
+  ScriptApp.newTrigger('mainFunction')
     .timeBased()
     .at(triggerDay)
     .create();
