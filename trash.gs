@@ -1,5 +1,6 @@
 const SPREAD_SHEET_URL = 'YOUR_SS_URL';
 const ACCESS_TOKEN = 'YOUR_ACCESS_TOKE';
+const MY_USER_ID = 'YOUR_USER_ID';
 const ss = SpreadsheetApp.openByUrl(SPREAD_SHEET_URL);
 const sheet = ss.getSheets()[0];
 
@@ -21,6 +22,8 @@ function addRecord(records = [], flag) {
   const lastRowM = sheetM.getLastRow() + 1;
   const rangeM = sheetM.getRange(lastRowM, 1, 1, records.length)
   rangeM.setValues([records])
+
+  sendMessage(MY_USER_ID, "[" + records[0] + "]\n" + records[2] + "が登録されました。");
 }
 
 // POSTリクエストに対する処理
