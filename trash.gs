@@ -51,6 +51,12 @@ function doPost(e) {
   const message = event.message.text;
   const keywordResult = searchKeywords(message);
 
+  if (message == "使い方を教えて！") {
+    const usageMessage = "このアカウントでは、毎日21時に翌日に収集されるごみをお知らせします。\n\nごみの名称を送信すると、そのごみが分類される収集区別の直近の収集日を知ることができます！\n\n※上記の機能は登録されていないワードに対しては機能しません。";
+    replyMessage(event.replyToken, usageMessage);
+    return;
+  }
+
   if (keywordResult == "粗大ごみ") {
     const specialMessage = "粗大ごみの収集方法については以下を参照してください。\n https://www.city.matsuyama.ehime.jp/kurashi/gomi/dashikata/sodaigomi.html";
     replyMessage(event.replyToken, specialMessage);
