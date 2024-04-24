@@ -1,8 +1,10 @@
 const SPREAD_SHEET_URL = 'YOUR_SS_URL';
 const ACCESS_TOKEN = 'YOUR_ACCESS_TOKE';
 const MY_USER_ID = 'YOUR_USER_ID';
+let matchedInfo = [];
 const ss = SpreadsheetApp.openByUrl(SPREAD_SHEET_URL);
 const sheet = ss.getSheets()[0];
+const sheetM = ss.getSheets()[1];
 
 // 一行分のデータを受け取って、シート末尾に記録する
 function addRecord(records = [], flag) {
@@ -45,12 +47,26 @@ function doPost(e) {
     return;
   }
 
+  // ユーザからの送信メッセージを取得
+  const message = event.message.text;
+  const keywordResult = searchKeywords(message);
+
+  if (keywordResult == "粗大ごみ") {
+    const specialMessage = "粗大ごみの収集方法については以下を参照してください。\n https://www.city.matsuyama.ehime.jp/kurashi/gomi/dashikata/sodaigomi.html";
+    replyMessage(event.replyToken, specialMessage);
+    return;
+  }
+
+  if (keywordResult != null) {
+    replyMessage(event.replyToken, suggestion(keywordResult));
+    return;
+  }
+
   var rmessages = [
     "メッセージありがとうございます！",
     "今日も頑張りましょう！",
     "お疲れ様です！",
-    "ごみは朝に出す派？夜に出す派？",
-    "今日のごみは出せましたか？", 
+    "今日のごみは出せましたか？",
     "眠いですね..."
   ];
 
@@ -211,10 +227,10 @@ function mainFunction() {
         } else if (weekNumber == 2 || weekNumber == 4) {
           trashType = "紙類";
         } else {
-          trashType = "金属・ガラス類";
+          trashType = "金物・ガラス類";
         }
       } else {
-        trashType = "金属・ガラス類";
+        trashType = "金物・ガラス類";
       }
       break;
     case 6: // 土曜日
@@ -276,4 +292,65 @@ function createTrigger() {
   // トリガー設定日時を記録
   var scriptProperties = PropertiesService.getScriptProperties();
   scriptProperties.setProperty('TriggerSetAt', triggerDay.toString());
+}
+
+function search(now, targetKey) {
+  var sheet = ss.getSheets()[2];
+  var lastRow = sheet.getLastRow();
+  var data = sheet.getRange(1, 1, lastRow, 3).getValues(); // ターゲットキーの列を取得
+
+  for (var i = 0; i < data.length; i++) {
+    var dateCellValue = data[i][0];
+    var weekCellValue = data[i][1];
+    var keyCellValue = data[i][2];
+    if (dateCellValue instanceof Date && dateCellValue >= now && keyCellValue === targetKey) {
+      // 現在の日付以降でターゲットキーが現れた場合
+      var month = dateCellValue.getMonth() + 1; // 月を取得
+      var day = dateCellValue.getDate(); // 日を取得
+      var formattedMonth = month.toString(); // 月を文字列に変換
+      var formattedDay = day.toString(); // 日を文字列に変換
+      var formattedDate = formattedMonth + "/" + formattedDay; // MM/DD 形式にフォーマット
+      matchedInfo = [formattedDate, weekCellValue, keyCellValue]; // マッチした日付を一時変数に記録
+      break; // ループを抜ける
+    }
+  }
+}
+
+function suggestion(trash) {
+  // Google Calendar APIを有効化し、必要な権限を付与する
+  var calendar = CalendarApp.getCalendarById("primary");
+
+  // 現在の日付を取得する
+  var now = new Date();
+
+  // 現在の日付から曜日を取得する
+  var dayOfWeek = now.getDay();
+
+  // 現在の日付から月を取得する
+  var month = now.getMonth() + 1;
+
+  // 現在の日付から週番号を取得する
+  var weekNumber = Math.floor((now.getDate() - 1) / 7) + 1;
+
+  search(now, trash);
+  const recentDay = "次の" + matchedInfo[2] + "の収集日は" + matchedInfo[0] + "(" + matchedInfo[1] + ")です。";
+  matchedInfo.length = 0;
+
+  return recentDay;
+}
+
+function searchKeywords(key) {
+  var sheet = ss.getSheets()[3];
+  var lastRow = sheet.getLastRow();
+  var range = sheet.getRange("A1:B" + lastRow);
+  var values = range.getValues();
+
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][0] === key) {
+      return values[i][1];
+    }
+  }
+
+  // keyに一致する文字列が見つからなかった場合
+  return null;
 }
