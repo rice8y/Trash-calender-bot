@@ -21,3 +21,5 @@ API: Messaging API
 [ChatGPTと一緒にゴミ出しLINE BOTを作ってみた](https://qiita.com/ryo-futebol/items/6374b91cc104a6347001)    
 [GASの定期実行をピッタリの時間に行う方法](https://qiita.com/kakakaori830/items/c06674252513b8d1c42e)     
 [LINE Messaging API へのメッセージ を GAS で処理する](https://zenn.dev/tyamap/articles/line-messaging-api-with-gas)
+[ごみ分別はやわかり帳(家庭用)](https://www.city.matsuyama.ehime.jp/kurashi/gomi/dashikata/bunbetsu_jiten_katei.html)
+[地区別ごみカレンダー（2024年度）道後・湯築地区](https://www.city.matsuyama.ehime.jp/kurashi/gomi/dashikata/gomicalender/r6gomikaretikubetu.files/2024dogo.pdf)
